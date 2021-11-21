@@ -3,7 +3,6 @@ import telebot
 import json
 from threading import Thread
 
-telegramBot = telebot.TeleBot("2072795720:AAEAk_Mr5fES8mHS67usLMeIwShL9Gbfpo8", parse_mode='Markdown')
 
 allChat = {
     'ids' : []
@@ -12,6 +11,9 @@ allChat = {
 configFile = open('app.config', 'r')
 appConfig = json.loads(configFile.read()) ##
 configFile.close
+
+telegramBot = telebot.TeleBot(appConfig['telegramBotId'], parse_mode='Markdown')
+
 
 @telegramBot.message_handler(commands=['start'])
 def handleStart(msg):
