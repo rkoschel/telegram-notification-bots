@@ -4,11 +4,12 @@ import json
 from threading import Thread
 
 
-allChat = {
-    'ids' : []
-}
+CONFIG_FILE_NAME = 'app.config'
+CHAT_IDS_FILE_NAME = 'chat.ids'
 
-configFile = open('app.config', 'r')
+allChat = {'ids' : []}
+
+configFile = open(CONFIG_FILE_NAME, 'r')
 appConfig = json.loads(configFile.read()) ##
 configFile.close
 
@@ -21,23 +22,27 @@ def handleStart(msg):
     if not alreadyKnown(curChatId):
         allChat['ids'].append({'id' : curChatId})
         print(f'added {curChatId}')
-        chatIdFile = open('chat.ids', 'w')
-        chatIdFile.write(str(allChat))
-        chatIdFile.close
+        saveChatIdsToFile(allChat)
     telegramBot.send_message(curChatId, appConfig['startMessage']) 
     #telegramBot.send_message(curChatId, latestMessage) ## TODO send some of the latest videos
 
-#@telegramBot.message_handler(commands=['stop'])
-#def handleStop(msg):
-#    curChatId = msg.from.id;
-#    allChatIds_NEW = new Array();
-#    for (let i = 0; i < allChatIds.length; i++) {
-#        if(allChatIds[i] != curChatId && allChatIds[i] != '')
-#            allChatIds_NEW.push(allChatIds[i]);
-#    }
-#    allChatIds = allChatIds_NEW;
-#    fs.writeFileSync(CHATID_FILE, allChatIds.join('\n'));
-#    bot.sendMessage(curChatId, appConfig.stopMessage);
+@telegramBot.message_handler(commands=['stop'])
+def handleStop(msg):
+    global allChat
+    curChatId = msg.from_user.id;
+    newChats = {'ids' : []}
+    for chat in allChat['ids']:
+        if chat['id'] != curChatId and chat['id'] != '':
+            newChats['ids'].append(chat)
+    allChat = newChats
+    saveChatIdsToFile(allChat)
+    print(f'deleted {curChatId}')
+    telegramBot.send_message(curChatId, appConfig['stopMessage']);
+
+def saveChatIdsToFile(chatIds):
+    chatIdFile = open(CHAT_IDS_FILE_NAME, 'w')
+    chatIdFile.write(str(chatIds))
+    chatIdFile.close
 
 #@telegramBot.message_handler(commands=['info'])
 #def handleInfo(msg):
