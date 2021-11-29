@@ -1,53 +1,53 @@
-from time import sleep
+import services.contentProvider as content
+from logging import INFO, NullHandler
 import telebot
 import json
 from threading import Thread
 
 
-CONFIG_FILE_NAME = 'app.config'
-CHAT_IDS_FILE_NAME = 'chat.ids'
+CONFIG_FILE_NAME    = 'app.config'
+CHAT_IDS_FILE_NAME  = 'chat.ids'
+INFO_MESSAGE_FILE_NAME = 'message.info'
 
-allChat = {'ids' : []}
+allChat     = {"ids" : []}
+appConfig   = { }
+infoMessage = ''
 
+## static config
+## is required to make telegram annotations work
 configFile = open(CONFIG_FILE_NAME, 'r')
 appConfig = json.loads(configFile.read()) ##
 configFile.close
 
 telegramBot = telebot.TeleBot(appConfig['telegramBotId'], parse_mode='Markdown')
 
-
 @telegramBot.message_handler(commands=['start'])
 def handleStart(msg):
     curChatId = msg.from_user.id
     if not alreadyKnown(curChatId):
-        allChat['ids'].append({'id' : curChatId})
+        allChat["ids"].append({"id" : curChatId})
         print(f'added {curChatId}')
         saveChatIdsToFile(allChat)
     telegramBot.send_message(curChatId, appConfig['startMessage']) 
-    #telegramBot.send_message(curChatId, latestMessage) ## TODO send some of the latest videos
+    sendMessages(curChatId)
 
 @telegramBot.message_handler(commands=['stop'])
 def handleStop(msg):
     global allChat
     curChatId = msg.from_user.id;
-    newChats = {'ids' : []}
-    for chat in allChat['ids']:
-        if chat['id'] != curChatId and chat['id'] != '':
-            newChats['ids'].append(chat)
+    newChats = {"ids" : []}
+    for chat in allChat["ids"]:
+        if chat["id"] != curChatId and chat["id"] != '':
+            newChats["ids"].append(chat)
     allChat = newChats
     saveChatIdsToFile(allChat)
     print(f'deleted {curChatId}')
     telegramBot.send_message(curChatId, appConfig['stopMessage']);
 
-def saveChatIdsToFile(chatIds):
-    chatIdFile = open(CHAT_IDS_FILE_NAME, 'w')
-    chatIdFile.write(str(chatIds))
-    chatIdFile.close
-
-#@telegramBot.message_handler(commands=['info'])
-#def handleInfo(msg):
-#    let curChatId = msg.from.id;
-#    bot.sendMessage(curChatId, infoMessage);
+@telegramBot.message_handler(commands=['info'])
+def handleInfo(msg):
+    curChatId = msg.from_user.id
+    telegramBot.send_message(curChatId, infoMessage)
 
 #@telegramBot.message_handler(commands=['bible'])
 #def handleBible(msg):
@@ -59,6 +59,61 @@ def saveChatIdsToFile(chatIds):
 #    let curChatId = msg.from.id
 #    bot.sendMessage(curChatId, appConfig.commentsMessage)
 
+
+###
+# init functions
+###
+def initTelegramBot():
+    global telegramBot
+    ## TODO make this more stable
+    ## - check if the connection is still alive
+    ## - re-connect if required
+    runTelegramThread = Thread(target=telegramBot.infinity_polling)
+    runTelegramThread.start()
+
+def loadInfoMessage():
+    global infoMessage
+    infoMessageFile = open(INFO_MESSAGE_FILE_NAME, 'r')
+    infoMessage = infoMessageFile.read()
+    infoMessageFile.close
+
+
+###
+# manage chat ids
+###
+def loadChatIdsFromFile():
+    global allChat
+    chatIdFile = open(CHAT_IDS_FILE_NAME, 'r')
+    try:
+       allChat = json.loads(chatIdFile.read())
+    except:
+        print('no valid chat.ids file')
+    chatIdFile.close
+
+def saveChatIdsToFile(chatIds):
+    chatIdFile = open(CHAT_IDS_FILE_NAME, 'w')
+    chatIdFile.write(json.dumps(chatIds))
+    chatIdFile.close
+
+
+### 
+# send messages
+###
+def sendMessages(chatId):
+    for message in content.msg["messages"]:
+        telegramBot.send_message(chatId, message["content"])
+
+def sendToAllWhoWant():
+    pass
+    ## TODO check which message should be send to whom
+    for chat in allChat['ids']:
+        ## if chat["time"] == ...
+        pass 
+
+
+###
+# misc
+###
 def alreadyKnown(chatId):
     wasNew = False
     for chat in allChat['ids']:
@@ -66,6 +121,13 @@ def alreadyKnown(chatId):
             return True
     return False
 
+##
+# start
+##
 def start():
-    runTelegramThread = Thread(target=telegramBot.infinity_polling)
-    runTelegramThread.start()
+    content.init()
+    loadInfoMessage()
+    loadChatIdsFromFile()
+    initTelegramBot()
+
+    print(allChat) ## debug
