@@ -1,7 +1,5 @@
 import services.botservice as bot
 import time, json
-from bs4 import BeautifulSoup
-import urllib3
 import re
 from threading import Thread
 from flask import Flask, request, jsonify

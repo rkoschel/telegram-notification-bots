@@ -6,8 +6,12 @@ Telegram bots to notify on regular basis (e.g. RSS feed updates).
 
 pip install pyTelegramBotAPI
 
-pip install flask
+pip install feedparser
 
-pip install beautifulsoup4
+#pip install flask
+
+#pip install beautifulsoup4
+
+
 
 ## run

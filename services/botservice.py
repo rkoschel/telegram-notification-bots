@@ -3,6 +3,7 @@ from logging import INFO, NullHandler
 import telebot
 import json
 from threading import Thread
+import datetime
 
 
 CONFIG_FILE_NAME    = 'app.config'
@@ -19,7 +20,7 @@ configFile = open(CONFIG_FILE_NAME, 'r')
 appConfig = json.loads(configFile.read()) ##
 configFile.close
 
-telegramBot = telebot.TeleBot(appConfig['telegramBotId'], parse_mode='Markdown')
+telegramBot = telebot.TeleBot(appConfig['telegramBotId'], parse_mode='HTML')
 
 @telegramBot.message_handler(commands=['start'])
 def handleStart(msg):
@@ -83,12 +84,12 @@ def loadInfoMessage():
 ###
 def loadChatIdsFromFile():
     global allChat
-    chatIdFile = open(CHAT_IDS_FILE_NAME, 'r')
     try:
+       chatIdFile = open(CHAT_IDS_FILE_NAME, 'r')
        allChat = json.loads(chatIdFile.read())
+       chatIdFile.close
     except:
         print('no valid chat.ids file')
-    chatIdFile.close
 
 def saveChatIdsToFile(chatIds):
     chatIdFile = open(CHAT_IDS_FILE_NAME, 'w')
@@ -101,7 +102,7 @@ def saveChatIdsToFile(chatIds):
 ###
 def sendMessages(chatId):
     for message in content.msg["messages"]:
-        telegramBot.send_message(chatId, message["content"])
+        telegramBot.send_message(chatId, message["content"], disable_web_page_preview=True)
 
 def sendToAllWhoWant():
     pass
@@ -125,7 +126,7 @@ def alreadyKnown(chatId):
 # start
 ##
 def start():
-    content.load()
+    content.load(appConfig)
     loadInfoMessage()
     loadChatIdsFromFile()
     initTelegramBot()
