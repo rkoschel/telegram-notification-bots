@@ -10,17 +10,17 @@ from threading import Thread
 msg = {"messages": []}
 
 
-def init():
+def load():
     global msg
     msg = {
         "messages": [
             {
                 "date" : "2021-11-20 12:01:04",
-                "content" : "fully *formatted* text"
+                "content" : "provide fully *formatted* text"
             },
             {
                 "date" : "2021-11-21 12:01:04",
-                "content" : "fully *formatted* text 2"
+                "content" : "with this _json_ structure"
             }
         ]
     } ## debug

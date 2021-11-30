@@ -125,7 +125,7 @@ def alreadyKnown(chatId):
 # start
 ##
 def start():
-    content.init()
+    content.load()
     loadInfoMessage()
     loadChatIdsFromFile()
     initTelegramBot()
