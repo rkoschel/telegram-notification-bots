@@ -1,4 +1,4 @@
-import services.botservice as bot
+from services.botHandler import notificationBot
 import time, json
 import re
 #from threading import Thread
@@ -13,8 +13,7 @@ if __name__ == '__main__':
     #app.config['JSON_AS_ASCII'] = False
     # runFlaskThread = Thread(target=app.run, args=('0.0.0.0', PORT, False))
     # runFlaskThread.start()
-
-    bot.start()
+    notificationBot.start()
 
     
     
