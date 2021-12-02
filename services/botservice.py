@@ -1,7 +1,7 @@
 from logging import INFO, NullHandler
 from threading import Thread
+import datetime as d
 import json
-import datetime
 
 class TelegramNotificationBot:
 
@@ -85,14 +85,20 @@ class TelegramNotificationBot:
     # send messages
     def sendLatestNotifications(self, chatId):
         for message in self.content.msg["messages"]:
-            self.telegramBot.send_message(chatId, message["content"], disable_web_page_preview=True)
+            msgDate = d.datetime.strptime(message["date"], "%Y-%m-%d %H:%M:%S")
+            msgContent = message["content"]
+            #nowDate = d.datetime.now()
+            self.telegramBot.send_message(chatId, msgContent, disable_web_page_preview=True)
 
-    def sendToAllWhoWant(self):
-        pass
-        ## TODO check which message should be send to whom
+    ## call this method in a loop / thread
+    def sendToAllWhoWant(self, msgDate, msgContent):
         for chat in self.allChat['ids']:
-            ## if chat["time"] == ...
-            pass 
+            curChatId = chat["id"]
+            #lastMessageDate = chat["lastMessageDate"]
+            # sendMessageDate = chat["sendMessageDate"]
+            ## TODO: if msgDate > lastMessageDate: sendMessage + setLasMessage
+            self.sendLatestNotifications(curChatId)
+ 
 
 
     ###
