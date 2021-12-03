@@ -1,7 +1,7 @@
 from logging import INFO, NullHandler
 from threading import Thread
 import datetime as d
-import json
+import json, time
 
 class TelegramNotificationBot:
 
@@ -10,10 +10,12 @@ class TelegramNotificationBot:
         self.telegramBot    = telegramBot
         self.content        = content
 
-    CHAT_IDS_FILE_NAME  = 'chat.ids'
-    INFO_MESSAGE_FILE_NAME = 'message.info'
+    MSG_SENDER_DELAY_SECONDS = 60 * 15 ## 15 minutes
+    MSG_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
+    CHAT_IDS_FILE_NAME  = "chat.ids"
+    INFO_MESSAGE_FILE_NAME = "message.info"
     allChat     = {"ids" : []}
-    infoMessage = ''
+    infoMessage = ""
     
     ###
     # events
@@ -21,10 +23,10 @@ class TelegramNotificationBot:
         curChatId = msg.from_user.id
         if not self.alreadyKnown(curChatId):
             self.allChat["ids"].append({"id" : curChatId})
-            print(f'added {curChatId}')
-            self.saveChatIdsToFile(self.allChat)
+            ## print(f"added {curChatId}") ## debug
+            self.saveChatIdsToFile()
         self.telegramBot.send_message(curChatId, self.appConfig['startMessage']) 
-        self.sendLatestNotifications(curChatId)
+        self.sendNewMessages(curChatId, None)
 
     def onStop(self, msg):
         curChatId = msg.from_user.id;
@@ -33,8 +35,8 @@ class TelegramNotificationBot:
             if chat["id"] != curChatId and chat["id"] != '':
                 newChats["ids"].append(chat)
         self.allChat = newChats
-        self.saveChatIdsToFile(self.allChat)
-        print(f'deleted {curChatId}')
+        self.saveChatIdsToFile()
+        ## print(f"deleted {curChatId}") ## debug
         self.telegramBot.send_message(curChatId, self.appConfig['stopMessage']);
 
     def onInfo(self, msg):
@@ -53,11 +55,12 @@ class TelegramNotificationBot:
     ###
     # init functions
     def initTelegramBot(self):
-        ## TODO make this more stable
-        ## - check if the connection is still alive
-        ## - re-connect if required
         runTelegramThread = Thread(target=self.telegramBot.infinity_polling)
         runTelegramThread.start()
+
+    def initSendingNewMessages(self):
+        runNewMsgsThread = Thread(target=self.sendToAllWhoWant)
+        runNewMsgsThread.start()
 
     def loadInfoMessage(self):
         infoMessageFile = open(self.INFO_MESSAGE_FILE_NAME, 'r')
@@ -73,40 +76,58 @@ class TelegramNotificationBot:
             self.allChat = json.loads(chatIdFile.read())
             chatIdFile.close
         except:
-            print('no valid chat.ids file')
+            print("no valid chat.ids file")
 
-    def saveChatIdsToFile(self, chatIds):
-        chatIdFile = open(self.CHAT_IDS_FILE_NAME, 'w')
-        chatIdFile.write(json.dumps(chatIds))
-        chatIdFile.close
-
+    def saveChatIdsToFile(self):
+        try: 
+            chatIdFile = open(self.CHAT_IDS_FILE_NAME, 'w')
+            chatIdFile.write(json.dumps(self.allChat))
+            chatIdFile.close
+        except:
+            print("could'nt write chats to file")
 
     ### 
     # send messages
-    def sendLatestNotifications(self, chatId):
+    def sendNewMessages(self, chatId, latestMessageDT):
         for message in self.content.msg["messages"]:
-            msgDate = d.datetime.strptime(message["date"], "%Y-%m-%d %H:%M:%S")
+            msgPublishDT = d.datetime.strptime(message["date"], self.MSG_DATE_FORMAT)
             msgContent = message["content"]
-            #nowDate = d.datetime.now()
-            self.telegramBot.send_message(chatId, msgContent, disable_web_page_preview=True)
+            if latestMessageDT == None or msgPublishDT > latestMessageDT:
+                self.telegramBot.send_message(chatId, msgContent, disable_web_page_preview=True)
+                self.updateLatestMessage(chatId, msgPublishDT)
+        self.saveChatIdsToFile()
 
-    ## call this method in a loop / thread
-    def sendToAllWhoWant(self, msgDate, msgContent):
-        for chat in self.allChat['ids']:
-            curChatId = chat["id"]
-            #lastMessageDate = chat["lastMessageDate"]
-            # sendMessageDate = chat["sendMessageDate"]
-            ## TODO: if msgDate > lastMessageDate: sendMessage + setLasMessage
-            self.sendLatestNotifications(curChatId)
- 
-
+    def sendToAllWhoWant(self):
+        while True:
+            try:
+                for chat in self.allChat['ids']:
+                    curChatId = chat["id"]
+                    nowDT = d.datetime.now()
+                    todayDateStr = nowDT.strftime("%Y-%m-%d")
+                    lastMessageDT = d.datetime.strptime(chat["lastMessageDateTime"], self.MSG_DATE_FORMAT)
+                    sendMessageDT = None
+                    try:
+                        sendMessageDT = d.datetime.strptime(todayDateStr + " " + chat["sendMessageTime"], self.MSG_DATE_FORMAT)
+                    except:
+                        print("no sendMessageTime defined for " + str(curChatId))
+                    if sendMessageDT == None or nowDT > sendMessageDT:
+                        self.sendNewMessages(curChatId, lastMessageDT)
+            except:
+                print("error during sending new messages")
+            print("waiting for " + str(self.MSG_SENDER_DELAY_SECONDS) + " before checking to send new messages again")
+            time.sleep(self.MSG_SENDER_DELAY_SECONDS)
 
     ###
     # misc
+    def updateLatestMessage(self, chatId, latestMessageDT):
+        for chat in self.allChat['ids']:
+            if chat["id"] == chatId:
+                chat["lastMessageDateTime"] = latestMessageDT.strftime(self.MSG_DATE_FORMAT)
+
     def alreadyKnown(self, chatId):
         wasNew = False
         for chat in self.allChat['ids']:
-            if chat['id'] == chatId:
+            if chat["id"] == chatId:
                 return True
         return False
 
@@ -116,5 +137,4 @@ class TelegramNotificationBot:
         self.loadInfoMessage()
         self.loadChatIdsFromFile()
         self.initTelegramBot()
-
-        print(self.allChat) ## debug
+        self.initSendingNewMessages()

@@ -13,10 +13,10 @@ import feedparser
 ## }
 msg = {"messages": []}
 
-loopDelayInMinutes = 1
+WAIT_UNTIL_LOADING_CONTENT_IN_MIN = 1
 MESSAGES_FILE_NAME = "messages.json"
 
-def load(appConfig):
+def init(appConfig):
     rssURL = appConfig['rssURL']
     loadMessages(rssURL)
     runRSSThread = Thread(target=loadMessagesInTheLoop, args=(rssURL, ))
@@ -25,8 +25,8 @@ def load(appConfig):
 def loadMessagesInTheLoop(rssURL):
     while True:
         try:
-            print(f"wating for {loopDelayInMinutes} minutes ...")
-            sleep(60 * loopDelayInMinutes)
+            print(f"wating for {WAIT_UNTIL_LOADING_CONTENT_IN_MIN} minutes ...")
+            sleep(60 * WAIT_UNTIL_LOADING_CONTENT_IN_MIN)
             loadMessages(rssURL)
         except:
             print("failed to load content this time")
@@ -36,7 +36,7 @@ def loadMessages(rssURL):
     newMsg = {"messages": []}
     NewsFeed = feedparser.parse(rssURL)
     entry = NewsFeed.entries[0]
-    print(entry)
+    ## print(entry) ## debug
     bibleText = entry["summary"]
     published = getFormattedPublishedDate(str(entry["published_parsed"]))
     newMessage = {
@@ -58,7 +58,7 @@ def getFormattedPublishedDate(dateString):
     return str(date["year"]) + "-" + str(date["month"]) + "-" + str(date["day"]) + " " + str(date["hour"]) + ":" + str(date["min"]) + ":" + str(date["sec"])
 
 def getPublishDate(dateString):
-    print(dateString)
+    ## print(dateString) ## debug
     year = list(map(int, re.findall("tm_year=(\d+)", dateString)))
     month = list(map(int, re.findall("tm_mon=(\d+),", dateString)))
     day = list(map(int, re.findall("tm_mday=(\d+)", dateString)))

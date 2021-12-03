@@ -1,11 +1,8 @@
 from services.botHandler import notificationBot
-import time, json
-import re
 #from threading import Thread
 #from flask import Flask, request, jsonify
 
-PORT = 5001
-
+#PORT = 5001
 #app = Flask(__name__)
 
 
