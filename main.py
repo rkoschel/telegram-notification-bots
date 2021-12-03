@@ -1,4 +1,4 @@
-from services.botHandler import notificationBot
+from services.tBotConfig import notificationBot
 #from threading import Thread
 #from flask import Flask, request, jsonify
 
