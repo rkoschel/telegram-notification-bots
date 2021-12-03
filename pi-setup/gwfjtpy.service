@@ -1,0 +1,11 @@
+[Unit]
+Description=Gottes Wort für jeden Tag
+After=multi-user.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python /home/pi/Apps/gwfjtpy/main.py
+Restart=on-abort
+
+[Install]
+WantedBy=multi-user.target
