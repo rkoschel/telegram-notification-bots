@@ -1,15 +1,9 @@
 import services.contentProvider as content
 import services.botservice as bs
 import telebot
-import json
+
+from services.appConfig import appConfig
 from telebot import apihelper
-
-CONFIG_FILE_NAME    = "app.config"
-configFile      = open(CONFIG_FILE_NAME, "r")
-appConfig       = json.loads(configFile.read()) 
-configFile.close
-
-content.init(appConfig)
 
 apihelper.SESSION_TIME_TO_LIVE = 5 * 60
 telegramAPI = telebot.TeleBot(appConfig["telegramBotId"], parse_mode="HTML")
