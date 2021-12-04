@@ -114,7 +114,7 @@ class TelegramNotificationBot:
                         self.sendNewMessages(curChatId, lastMessageDT)
             except:
                 print("error during sending new messages")
-            print("waiting for " + str(self.MSG_SENDER_DELAY_SECONDS) + " before checking to send new messages again")
+            print("waiting for " + str(self.MSG_SENDER_DELAY_SECONDS/60) + " min. before checking to send new messages again")
             time.sleep(self.MSG_SENDER_DELAY_SECONDS)
 
     ###
