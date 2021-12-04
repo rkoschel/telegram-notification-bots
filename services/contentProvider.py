@@ -13,7 +13,7 @@ import feedparser
 ## }
 msg = {"messages": []}
 
-WAIT_UNTIL_LOADING_CONTENT_IN_MIN = 1
+WAIT_UNTIL_LOADING_CONTENT_IN_MIN = 90
 MESSAGES_FILE_NAME = "messages.json"
 
 def init(appConfig):
