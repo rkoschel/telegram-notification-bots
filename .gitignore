@@ -3,6 +3,7 @@ app.config
 chat.ids
 playground.py
 messages.json
+message.info
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
