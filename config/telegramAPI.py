@@ -1,14 +1,16 @@
-import services.contentProvider as content
-import services.botservice as bs
 import telebot
 
-from services.appConfig import appConfig
 from telebot import apihelper
+from config.appConfig import appConfig
+
+from services.contentProvider import ContentProvider
+from services.TNBClass import TelegramNotificationBot
 
 apihelper.SESSION_TIME_TO_LIVE = 5 * 60
 telegramAPI = telebot.TeleBot(appConfig["telegramBotId"], parse_mode="HTML")
 
-notificationBot = bs.TelegramNotificationBot(appConfig, telegramAPI, content)
+content = ContentProvider(appConfig)
+notificationBot = TelegramNotificationBot(appConfig, telegramAPI, content)
 
 @telegramAPI.message_handler(commands=["start"])
 def botHandleStart(msg):

@@ -1,9 +1,6 @@
-import services.contentProvider as content
-from services.tBotConfig import notificationBot
-from services.appConfig import appConfig
+from config.telegramAPI import notificationBot
 
 if __name__ == '__main__':
-    content.init(appConfig)
     notificationBot.start()
 
     
