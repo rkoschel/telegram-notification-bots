@@ -1,2 +1,2 @@
-sudo systemctl stop gwfjtpy.service
-sudo rm /lib/systemd/system/gwfjtpy.service
+sudo systemctl stop gwfjt.service
+sudo rm /lib/systemd/system/gwfjt.service

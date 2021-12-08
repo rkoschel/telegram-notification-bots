@@ -4,7 +4,7 @@ After=multi-user.target
 
 [Service]
 Type=simple
-ExecStart=/home/pi/Apps/gwfjtpy/bin/run.sh
+ExecStart=/home/pi/Apps/gwfjt/bin/run.sh
 Restart=on-abort
 
 [Install]
