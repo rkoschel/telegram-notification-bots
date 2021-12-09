@@ -30,10 +30,10 @@ class ContentProvider:
         while True:
             try:
                 self.loadMessages()
-                print(f"wating for {self.WAIT_UNTIL_LOADING_CONTENT_IN_MIN} minutes ...")
-                sleep(60 * self.WAIT_UNTIL_LOADING_CONTENT_IN_MIN)
             except:
                 print("failed to load content this time")
+            print(f"wating for {self.WAIT_UNTIL_LOADING_CONTENT_IN_MIN} minutes ...")
+            sleep(60 * self.WAIT_UNTIL_LOADING_CONTENT_IN_MIN)
 
 
     def loadMessages(self):
