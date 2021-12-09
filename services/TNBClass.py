@@ -55,10 +55,13 @@ class TelegramNotificationBot:
         runNewMsgsThread.start()
 
     def loadInfoMessage(self):
-        infoMessageFile = open(self.INFO_MESSAGE_FILE_NAME, 'r')
-        self.infoMessage = infoMessageFile.read()
-        infoMessageFile.close
-
+        try:
+            infoMessageFile = open(self.INFO_MESSAGE_FILE_NAME, 'r')
+            self.infoMessage = infoMessageFile.read()
+            infoMessageFile.close
+        except:
+            print("couldn't load message file")
+            self.infoMessage = "Info"
 
     ###
     # manage chat ids
