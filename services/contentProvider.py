@@ -1,6 +1,6 @@
 from time import sleep
-from threading import Thread
 import datetime as d
+from threading import Thread, Lock
 import json
 import re
 import feedparser
@@ -14,12 +14,16 @@ class ContentProvider:
     ## }
     msg = {"messages": []}
 
+    MSG_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
     WAIT_UNTIL_LOADING_CONTENT_IN_MIN = 90 ## default; change with app.config: "rssIntervalMinutes"
     MESSAGES_FILE_NAME = "messages.json"
 
+    lock = Lock()
 
     def __init__(self, appConfig):
-        self.rssURL = appConfig['rssURL']
+        self.appConfig = appConfig
+        self.ytChannels = appConfig["ytChannels"]
+        ##self.rssURL = appConfig["rssURL"]
         self.WAIT_UNTIL_LOADING_CONTENT_IN_MIN = int(appConfig["rssIntervalMinutes"])
         self.loadMessages()
         runRSSThread = Thread(target=self.loadMessagesInTheLoop, args=( ))
@@ -28,44 +32,72 @@ class ContentProvider:
 
     def loadMessagesInTheLoop(self):
         while True:
+            print(f"wating for {self.WAIT_UNTIL_LOADING_CONTENT_IN_MIN} minutes ...")
+            sleep(60 * self.WAIT_UNTIL_LOADING_CONTENT_IN_MIN)
             try:
                 self.loadMessages()
             except:
                 print("failed to load content this time")
-            print(f"wating for {self.WAIT_UNTIL_LOADING_CONTENT_IN_MIN} minutes ...")
-            sleep(60 * self.WAIT_UNTIL_LOADING_CONTENT_IN_MIN)
+
+
+    def loadMessagesFromOneYTChannel(self, ytRssChannelURL):
+        print(f"load messages from {ytRssChannelURL}") ## debug
+        newMsg = {"messages": []}
+        NewsFeed = feedparser.parse(ytRssChannelURL)
+        #print(f"{NewsFeed}") ## debug
+        for entry in reversed(NewsFeed.entries):
+            #print(entry) ## debug
+            messageText = self.formatMessage(entry)
+            print(messageText) ## debug
+            published = self.getFormattedPublishedDate(str(entry["published_parsed"]))
+            newMessage = {
+                "date" : f"{published}",
+                "content" : f"{messageText}"
+            }
+            newMsg["messages"].append(newMessage)
+        return newMsg
 
 
     def loadMessages(self):
-        newMsg = {"messages": []}
-        NewsFeed = feedparser.parse(self.rssURL)
-        entry = NewsFeed.entries[0]
-        ## print(entry) ## debug
-        messageText = self.formatMessage(entry["summary"])
-        published = self.getFormattedPublishedDate(str(entry["published_parsed"]))
-        newMessage = {
-            "date" : f"{published}",
-            "content" : f"{messageText}"
-        }
-        newMsg["messages"].append(newMessage)
-        self.msg = newMsg
+        for rssURL in self.ytChannels:
+            try:
+                newMsgs = self.loadMessagesFromOneYTChannel(rssURL)
+                addedMsgs = self.msg["messages"] + newMsgs["messages"]
+                print(f"#1# add to self.msg[]: {addedMsgs}")
+                self.msg["messages"] = addedMsgs
+            except:
+                print(f"not possible to load messsages from {rssURL}")
+            sleep(1)
+        #logMessage = self.msg["messages"]
+        #print(f"all messages: {logMessage}")
+        self.msg["messages"].sort(key=self.sortMessagesFunction)
         self.persistMessages()
 
 
-    def formatMessage(self, message):
-        formattedMessage = message
-        ## TODO: format message here
+    def sortMessagesFunction(self, msg):
+        try:
+            return d.datetime.strptime(msg["date"], self.MSG_DATE_FORMAT)
+        except:
+            return d.datetime.now()
+
+
+    def formatMessage(self, rssEntry):
+        title = rssEntry["title"]
+        link = rssEntry["link"]
+        author = rssEntry["authors"][0]["name"]
+        formattedMessage = "<b>" + author + "</b>\n\n" + title + "\n\n" + link + "\n"
         return formattedMessage
 
 
     def persistMessages(self):
+        self.lock.acquire()
         try:
             messageFile = open(self.MESSAGES_FILE_NAME, 'w')
             messageFile.write(json.dumps(self.msg))
             messageFile.close
         except:
             print(f"error saving message file: {self.MESSAGES_FILE_NAME}")
-
+        self.lock.release()
 
     def getFormattedPublishedDate(self, dateString):
         date = self.getPublishDate(dateString)

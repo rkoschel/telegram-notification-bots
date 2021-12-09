@@ -1,4 +1,5 @@
 from logging import INFO, NullHandler
+import re
 from threading import Thread
 import datetime as d
 import json, time
@@ -12,6 +13,7 @@ class TelegramNotificationBot:
 
     MSG_SENDER_DELAY_SECONDS = 60 * 5 ## 5 minutes
     MSG_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
+    NUMBER_OF_MESSAGES_SEND_ON_START=3
     CHAT_IDS_FILE_NAME  = "chat.ids"
     INFO_MESSAGE_FILE_NAME = "message.info"
     allChat     = {"ids" : []}
@@ -26,7 +28,7 @@ class TelegramNotificationBot:
             ## print(f"added {curChatId}") ## debug
             self.saveChatIdsToFile()
         self.telegramBot.send_message(curChatId, self.appConfig['startMessage']) 
-        self.sendNewMessages(curChatId, None)
+        self.sendNewMessages(curChatId, None, self.NUMBER_OF_MESSAGES_SEND_ON_START)
 
     def onStop(self, msg):
         curChatId = msg.from_user.id;
@@ -71,7 +73,7 @@ class TelegramNotificationBot:
             self.allChat = json.loads(chatIdFile.read())
             chatIdFile.close
         except:
-            print("no valid chat.ids file")
+            print("no valid chat.ids file found")
 
     def saveChatIdsToFile(self):
         try: 
@@ -81,19 +83,44 @@ class TelegramNotificationBot:
         except:
             print("could'nt write chats to file")
 
+
     ### 
     # send messages
-    def sendNewMessages(self, chatId, latestMessageDT):
-        for message in self.content.msg["messages"]:
-            msgPublishDT = d.datetime.strptime(message["date"], self.MSG_DATE_FORMAT)
-            msgContent = message["content"]
-            if latestMessageDT == None or msgPublishDT > latestMessageDT:
-                try:
-                    self.telegramBot.send_message(chatId, msgContent, disable_web_page_preview=True)
-                    self.updateLatestMessage(chatId, msgPublishDT)
-                except:
-                    print(f"sending message to {chatId} failed")
+    def filterMessages(self, messages, maxNumberOfMessages):
+        if maxNumberOfMessages < 0:
+            return messages
+
+        try:
+            numberOfAllMessages = len(self.content.msg["messages"])
+            startMessageIndex = numberOfAllMessages -maxNumberOfMessages
+            endMessageIndex = numberOfAllMessages
+            filteredMessages = []
+            for wantedMessageIndex in range(startMessageIndex, endMessageIndex):
+                wantedMessage = self.content.msg["messages"][wantedMessageIndex]
+                filteredMessages.append(wantedMessage)
+                print(f"wantedMessage #{wantedMessageIndex}#: {wantedMessage}")
+            return filteredMessages
+        except:
+            print("error during filtering messages")
+            return []
+
+
+    def sendNewMessages(self, chatId, latestMessageDT, maxNumberOfMessages=-1):
+        try:
+            wantedMessages = self.filterMessages(self.content.msg["messages"], maxNumberOfMessages)
+            for message in wantedMessages:
+                msgPublishDT = d.datetime.strptime(message["date"], self.MSG_DATE_FORMAT)
+                msgContent = message["content"]
+                if latestMessageDT == None or msgPublishDT > latestMessageDT:
+                    try:
+                        self.telegramBot.send_message(chatId, msgContent, disable_web_page_preview=False)
+                        self.updateLatestMessage(chatId, msgPublishDT)
+                    except:
+                        print(f"sending one message to {chatId} failed")
+        except:
+            print(f"sending message to {chatId} failed")
         self.saveChatIdsToFile()
+
 
     def sendToAllWhoWant(self):
         while True:
