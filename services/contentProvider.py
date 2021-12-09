@@ -41,11 +41,11 @@ class ContentProvider:
         NewsFeed = feedparser.parse(self.rssURL)
         entry = NewsFeed.entries[0]
         ## print(entry) ## debug
-        bibleText = self.formatMessage(entry["summary"])
+        messageText = self.formatMessage(entry["summary"])
         published = self.getFormattedPublishedDate(str(entry["published_parsed"]))
         newMessage = {
             "date" : f"{published}",
-            "content" : f"{bibleText}"
+            "content" : f"{messageText}"
         }
         newMsg["messages"].append(newMessage)
         self.msg = newMsg
@@ -54,9 +54,7 @@ class ContentProvider:
 
     def formatMessage(self, message):
         formattedMessage = message
-        msgParts = message.split(" (<a ")
-        if len(msgParts) == 2:
-            formattedMessage = "<b>" + msgParts[0] + "</b> (<a " + msgParts[1]
+        ## TODO: format message here
         return formattedMessage
 
 

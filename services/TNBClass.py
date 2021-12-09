@@ -10,7 +10,7 @@ class TelegramNotificationBot:
         self.telegramBot    = telegramBot
         self.content        = content
 
-    MSG_SENDER_DELAY_SECONDS = 60 * 1 ## 15 minutes
+    MSG_SENDER_DELAY_SECONDS = 60 * 5 ## 5 minutes
     MSG_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
     CHAT_IDS_FILE_NAME  = "chat.ids"
     INFO_MESSAGE_FILE_NAME = "message.info"
@@ -42,15 +42,7 @@ class TelegramNotificationBot:
     def onInfo(self, msg):
         curChatId = msg.from_user.id
         self.telegramBot.send_message(curChatId, self.infoMessage)
-
-    def onBible(self, msg):
-        curChatId = msg.from_user.id
-        self.telegramBot.send_message(curChatId, self.appConfig["bibleMessage"])
-
-    def onComments(self, msg):
-        curChatId = msg.from_user.id
-        self.telegramBot.send_message(curChatId, self.appConfig["commentsMessage"])
-
+        
 
     ###
     # init functions

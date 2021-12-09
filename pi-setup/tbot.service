@@ -1,10 +1,10 @@
 [Unit]
-Description=Gottes Wort für jeden Tag
+Description=Telegram Bot
 After=multi-user.target
 
 [Service]
 Type=simple
-ExecStart=/home/pi/Apps/gwfjt/bin/run.sh
+ExecStart=/home/pi/Apps/tbot/bin/run.sh
 Restart=on-abort
 
 [Install]

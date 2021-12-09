@@ -23,11 +23,3 @@ def botHandleStop(msg):
 @telegramAPI.message_handler(commands=["info"])
 def botHandleInfo(msg):
     notificationBot.onInfo(msg)
-
-@telegramAPI.message_handler(commands=["bible"])
-def botHandleBible(msg):
-    notificationBot.onBible(msg)
-
-@telegramAPI.message_handler(commands=["comments"])
-def handleComments(msg):
-    notificationBot.onComments(msg)
