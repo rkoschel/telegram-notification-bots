@@ -88,8 +88,11 @@ class TelegramNotificationBot:
             msgPublishDT = d.datetime.strptime(message["date"], self.MSG_DATE_FORMAT)
             msgContent = message["content"]
             if latestMessageDT == None or msgPublishDT > latestMessageDT:
-                self.telegramBot.send_message(chatId, msgContent, disable_web_page_preview=True)
-                self.updateLatestMessage(chatId, msgPublishDT)
+                try:
+                    self.telegramBot.send_message(chatId, msgContent, disable_web_page_preview=True)
+                    self.updateLatestMessage(chatId, msgPublishDT)
+                except:
+                    print(f"sending message to {chatId} failed")
         self.saveChatIdsToFile()
 
     def sendToAllWhoWant(self):
