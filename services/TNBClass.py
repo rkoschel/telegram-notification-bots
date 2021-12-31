@@ -101,6 +101,8 @@ class TelegramNotificationBot:
                     self.updateLatestMessage(chatId, msgPublishDT)
                 except:
                     print(f"sending message to {chatId} failed")
+                    ## TODO: count failures in the row
+                    ## if more then 10 days remove chatId
         self.saveChatIdsToFile()
 
     def sendToAllWhoWant(self):
