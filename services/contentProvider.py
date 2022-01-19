@@ -41,8 +41,8 @@ class ContentProvider:
         NewsFeed = feedparser.parse(self.rssURL)
         entry = NewsFeed.entries[0]
         ## print(entry) ## debug
-        bibleText = "INFO: Dieser Dienst wird aus organisatorischen Gründen einige Zeit nicht zur Verfügung stehen.\nWeitere Infos: https://t.me/bibelbots" ##original:# self.formatMessage(entry["summary"])
-        published = self.getFormattedPublishedDate(str(entry["published_parsed"]))
+        bibleText = "INFO: Dieser Dienst wird aus organisatorischen Gruenden einige Zeit nicht zur Verfuegung stehen.\nWeitere Infos: https://t.me/bibelbots" ##original:# self.formatMessage(entry["summary"])
+        published = "2022-1-20 0:0:0" ###original:# self.getFormattedPublishedDate(str(entry["published_parsed"]))
         newMessage = {
             "date" : f"{published}",
             "content" : f"{bibleText}"
