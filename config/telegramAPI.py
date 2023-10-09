@@ -1,3 +1,4 @@
+## telebot docu -> https://pytba.readthedocs.io/en/latest/index.html
 import telebot
 
 from telebot import apihelper
@@ -11,6 +12,11 @@ telegramAPI = telebot.TeleBot(appConfig["telegramBotId"], parse_mode="HTML")
 
 content = ContentProvider(appConfig)
 notificationBot = TelegramNotificationBot(appConfig, telegramAPI, content)
+
+## this doesn't work!!
+@telegramAPI.callback_query_handler(func=notificationBot.handleCallback, kwargs="")
+def botHandlerCallback(callback):
+    notificationBot.handleCallback(callback)
 
 @telegramAPI.message_handler(commands=["start"])
 def botHandleStart(msg):
@@ -28,6 +34,6 @@ def botHandleInfo(msg):
 def botHandleBible(msg):
     notificationBot.onBible(msg)
 
-@telegramAPI.message_handler(commands=["comments"])
-def handleComments(msg):
-    notificationBot.onComments(msg)
+@telegramAPI.message_handler(commands=["help"])
+def handleBibleHelp(msg):
+    notificationBot.onBibleHelp(msg)

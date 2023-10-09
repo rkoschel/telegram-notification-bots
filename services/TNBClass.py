@@ -13,20 +13,61 @@ class TelegramNotificationBot:
     MSG_SENDER_DELAY_SECONDS = 60 * 5 ## 5 minutes
     MSG_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
     CHAT_IDS_FILE_NAME  = "chat.ids"
+    REQUESTED_IDS_FILE_NAME  = "requested.ids"
     INFO_MESSAGE_FILE_NAME = "message.info"
-    allChat     = {"ids" : []}
+    allChat          = {"ids" : []}
+    requestedChatIds = {"ids" : []}
     infoMessage = ""
     
     ###
     # events
+    def handleCallback(self, callback):
+        adminChatId = self.appConfig['adminChatId']
+        queryId = callback.json['id']
+        answerRequestersId = callback.json['data'].split('-')[0]
+        answerAccepted = callback.json['data'].split('-')[1]
+        chatId = str(callback.json['from']['id'])
+        messageId = callback.json['message']['message_id']
+        self.telegramBot.answer_callback_query(queryId)
+        ## TODO: instead of removing the buttons, replace them with "I'm sure.", "whops, back"
+        self.telegramBot.edit_message_reply_markup(chatId, messageId, reply_markup="")
+        # TODO: check if answerRequesterId is in self.requestedChatIds
+        ## what does it mean??
+        if chatId != adminChatId:
+            print(f'NOT ALLOWED: {chatId} wanted to confirm a request: {answerRequestersId}')
+            self.telegramBot.send_message(chatId, f"das darfst du nicht!")
+        else:
+            print(f'callback: {queryId} = {answerAccepted}')
+            self.telegramBot.send_message(chatId, f"du hast auf die Anfrage mit {answerAccepted} reagiert.")
+            if answerAccepted.lower() == 'true':
+                # TODO send confirmation to subscriber
+                self.confirmRequest(answerRequestersId)
+        
+    
     def onStart(self, msg):
         curChatId = msg.from_user.id
-        if not self.alreadyKnown(curChatId):
-            self.allChat["ids"].append({"id" : curChatId})
+        requestersName = msg.from_user.first_name
+        if not self.alreadyRequested(curChatId):
+            self.requestedChatIds["ids"].append({"id" : curChatId})
             ## print(f"added {curChatId}") ## debug
-            self.saveChatIdsToFile()
-        self.telegramBot.send_message(curChatId, self.appConfig['startMessage']) 
-        self.sendNewMessages(curChatId, None)
+            self.saveRequestedChatIdsToFile()
+        generalRequestMessage = self.appConfig['requestMessage']
+        if requestersName != '':
+            individualRequestMessage = generalRequestMessage.replace('#_firstname_#', ' ' + requestersName)
+        else:
+            individualRequestMessage = generalRequestMessage.replace('#_firstname_#', '')
+        generalAdminMessage = self.appConfig['adminMessage']
+        if requestersName != '':
+            individualAdminMessage = generalAdminMessage.replace('#_firstname_#', ' ' + requestersName)
+        else:
+            individualAdminMessage = generalAdminMessage.replace('#_firstname_#', '')
+        self.telegramBot.send_message(curChatId, individualRequestMessage) 
+        adminChatId = self.appConfig['adminChatId']
+        buttonYes = self.createCallbackButton("YES", curChatId, True)
+        buttonNo = self.createCallbackButton("NO", curChatId, False)
+        keyBoard = {}
+        keyBoard["inline_keyboard"] = [[buttonYes, buttonNo]]
+        self.telegramBot.send_message(adminChatId, individualAdminMessage, reply_markup = json.dumps(keyBoard))
 
     def onStop(self, msg):
         curChatId = msg.from_user.id;
@@ -47,9 +88,9 @@ class TelegramNotificationBot:
         curChatId = msg.from_user.id
         self.telegramBot.send_message(curChatId, self.appConfig["bibleMessage"])
 
-    def onComments(self, msg):
+    def onBibleHelp(self, msg):
         curChatId = msg.from_user.id
-        self.telegramBot.send_message(curChatId, self.appConfig["commentsMessage"])
+        self.telegramBot.send_message(curChatId, self.appConfig["bibleHelpMessage"])
 
 
     ###
@@ -80,6 +121,22 @@ class TelegramNotificationBot:
             chatIdFile.close
         except:
             print("no valid chat.ids file")
+
+    def loadRequestedIdsFromFile(self):
+        try:
+            requestIdFile = open(self.REQUESTED_IDS_FILE_NAME, 'r')
+            self.requestedChatIds = json.loads(requestIdFile.read())
+            requestIdFile.close
+        except:
+            print("no valid request.ids file")
+
+    def saveRequestedChatIdsToFile(self):
+        try: 
+            chatIdFile = open(self.REQUESTED_IDS_FILE_NAME, 'w')
+            chatIdFile.write(json.dumps(self.allChat))
+            chatIdFile.close
+        except:
+            print("could'nt write chats to file")
 
     def saveChatIdsToFile(self):
         try: 
@@ -127,6 +184,20 @@ class TelegramNotificationBot:
 
     ###
     # misc
+    def createCallbackButton(self, label, chatId, returnValue):
+        button = {}
+        button["text"] = str(label)
+        button["callback_data"] = str(chatId) + "-" + str(returnValue)
+        return button
+    
+    def confirmRequest(self, requestersChatId):
+        if not self.alreadyKnown(requestersChatId):
+            self.allChat["ids"].append({"id" : requestersChatId})
+            ## print(f"added {curChatId}") ## debug
+            self.saveChatIdsToFile()
+        self.telegramBot.send_message(requestersChatId, self.appConfig['startMessage']) 
+        self.sendNewMessages(requestersChatId, None)
+        
     def updateLatestMessage(self, chatId, latestMessageDT):
         for chat in self.allChat['ids']:
             if chat["id"] == chatId:
@@ -138,11 +209,19 @@ class TelegramNotificationBot:
             if chat["id"] == chatId:
                 return True
         return False
+    
+    def alreadyRequested(self, chatId):
+        wasNew = False
+        for chat in self.requestedChatIds['ids']:
+            if chat["id"] == chatId:
+                return True
+        return False
 
     ##
     # start
     def start(self):
         self.loadInfoMessage()
+        self.loadRequestedIdsFromFile()
         self.loadChatIdsFromFile()
         self.initTelegramBot()
         self.initSendingNewMessages()

@@ -1,6 +1,8 @@
 .vscode
 app.config
 chat.ids
+chat.ids.rk
+requested.ids
 playground.py
 messages.json
 message.info
