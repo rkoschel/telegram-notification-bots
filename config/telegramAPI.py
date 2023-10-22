@@ -3,15 +3,18 @@ import telebot
 
 from telebot import apihelper
 from config.appConfig import appConfig
-
+from services.callbackHandler import CallbackHandler
 from services.contentProvider import ContentProvider
-from services.TNBClass import TelegramNotificationBot
+from services.subscriptionManager import SubscriptionManager
+from services.telegramNotificationBot import TelegramNotificationBot
 
 apihelper.SESSION_TIME_TO_LIVE = 5 * 60
 telegramAPI = telebot.TeleBot(appConfig["telegramBotId"], parse_mode="HTML")
 
 content = ContentProvider(appConfig)
-notificationBot = TelegramNotificationBot(appConfig, telegramAPI, content)
+subManager = SubscriptionManager(appConfig)
+callbackHandler = CallbackHandler()
+notificationBot = TelegramNotificationBot(appConfig, telegramAPI, content, subManager, callbackHandler)
 
 ## this doesn't work!!
 @telegramAPI.callback_query_handler(func=notificationBot.handleCallback, kwargs="")
