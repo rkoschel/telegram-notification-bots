@@ -24,7 +24,7 @@ class SubscriptionManager:
     def removeSubscriber(self, chatId):
         newChats = {"ids" : []}
         for chat in self.allChat["ids"]:
-            if chat["id"] != chatId and chat["id"] != '':
+            if str(chat["id"]) != str(chatId) and chat["id"] != '':
                 newChats["ids"].append(chat)
         self.allChat = newChats
         return self.saveChatIdsToFile()
@@ -36,14 +36,14 @@ class SubscriptionManager:
 
     def alreadyKnown(self, chatId):
         for chat in self.allChat['ids']:
-            if chat["id"] == chatId:
+            if str(chat["id"]) == str(chatId):
                 return True
         return False
 
 
     def updateLatestMessage(self, chatId, latestMessageDT):
         for chat in self.allChat['ids']:
-            if chat["id"] == chatId:
+            if str(chat["id"]) == str(chatId):
                 chat["lastMessageDateTime"] = latestMessageDT.strftime(MSG_DATE_FORMAT)
 
 

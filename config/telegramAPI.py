@@ -16,7 +16,6 @@ subManager = SubscriptionManager(appConfig)
 callbackHandler = CallbackHandler()
 notificationBot = TelegramNotificationBot(appConfig, telegramAPI, content, subManager, callbackHandler)
 
-## this doesn't work!!
 @telegramAPI.callback_query_handler(func=notificationBot.handleCallback, kwargs="")
 def botHandlerCallback(callback):
     notificationBot.handleCallback(callback)
