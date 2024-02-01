@@ -21,7 +21,9 @@ class TelegramNotificationBot:
     ###
     # events
     def handleCallback(self, callback):
+        print(f'callback: {callback}')
         adminChatId = self.appConfig['adminChatId']
+        # TODO: .json doesn't work with python 3.7 on pi
         queryId = callback.json['id']
         data    = callback.json['data']
         requestersChatId = self.callbackHandler.getChatIdFromData(data)
@@ -29,7 +31,6 @@ class TelegramNotificationBot:
         answer    = self.callbackHandler.getValueFromData(data)
         chatId    = str(callback.json['from']['id'])
         messageId = callback.json['message']['message_id']
-        # lastKeyboard = callback.json['message']['reply_markup']
         
         self.telegramBot.answer_callback_query(queryId)
 
@@ -147,6 +148,7 @@ class TelegramNotificationBot:
                     todayDateStr = nowDT.strftime("%Y-%m-%d")
                     lastMessageDT = d.datetime.strptime(chat["lastMessageDateTime"], MSG_DATE_FORMAT)
                     sendMessageDT = None
+                    # TODO send only at specific time slot (not in night)
                     try:
                         sendMessageDT = d.datetime.strptime(todayDateStr + " " + chat["sendMessageTime"], MSG_DATE_FORMAT)
                     except:
