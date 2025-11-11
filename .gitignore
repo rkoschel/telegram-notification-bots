@@ -6,6 +6,7 @@ requested.ids
 playground.py
 messages.json
 message.info
+gwfjtenv/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
