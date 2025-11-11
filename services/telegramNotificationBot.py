@@ -21,9 +21,9 @@ class TelegramNotificationBot:
     ###
     # events
     def handleCallback(self, callback):
-        print(f'callback: {callback}')
+        #print(f'callback: {callback}') ## debug
         adminChatId = self.appConfig['adminChatId']
-        # TODO: .json doesn't work with python 3.7 on pi
+        # INFO: .json doesn't work with python 3.7 on pi
         queryId = callback.json['id']
         data    = callback.json['data']
         requestersChatId = self.callbackHandler.getChatIdFromData(data)
