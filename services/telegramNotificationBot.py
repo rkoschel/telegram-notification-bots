@@ -39,7 +39,7 @@ class TelegramNotificationBot:
             print(f'NOT ALLOWED: {chatId} wanted to confirm a request from  {requestersName}')
             self.telegramBot.send_message(adminChatId, f'error 11\n{chatId}\n{requestersName}')
         else:
-            print(f'callback: {queryId} = {answer}')
+            # print(f'callback: {queryId} = {answer}') ## debug
             adminButtonConfirm = self.appConfig['adminButtonConfirm']
             adminButtonDecline = self.appConfig['adminButtonDecline']
             adminButtonYes = self.appConfig['adminButtonYes']
