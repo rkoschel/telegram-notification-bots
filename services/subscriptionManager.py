@@ -1,10 +1,12 @@
 import json
+import logging
 
 from config.constants import MSG_DATE_FORMAT
 
 
 class SubscriptionManager:
 
+    logger = logging.getLogger(__name__)
     CHAT_IDS_FILE_NAME  = "chat.ids"
     allChat             = {"ids" : []}
 
@@ -15,7 +17,7 @@ class SubscriptionManager:
     def addSubscriber(self, chatId):
         if not self.alreadyKnown(chatId):
             self.allChat["ids"].append({"id" : chatId})
-            print(f"added {chatId}") ## debug
+            self.logger.info(f"added {chatId}")
             return self.saveChatIdsToFile()
         else:
             return False
@@ -51,17 +53,17 @@ class SubscriptionManager:
         try:
             chatIdFile = open(self.CHAT_IDS_FILE_NAME, 'r')
             self.allChat = json.loads(chatIdFile.read())
-            chatIdFile.close
+            chatIdFile.close()
         except:
-            print("no valid chat.ids file")
+            self.logger.error("no valid chat.ids file")
 
 
     def saveChatIdsToFile(self):
         try: 
             chatIdFile = open(self.CHAT_IDS_FILE_NAME, 'w')
             chatIdFile.write(json.dumps(self.allChat))
-            chatIdFile.close
+            chatIdFile.close()
             return True
         except:
-            print("could'nt write chats to file")
+            self.logger.error("could'nt write chats to file")
             return False

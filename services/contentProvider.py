@@ -4,6 +4,7 @@ import datetime as d
 import json
 import re
 import feedparser
+import logging
 
 class ContentProvider:
 
@@ -13,6 +14,8 @@ class ContentProvider:
     ##  "content" : "fully *formatted* text"
     ## }
     msg = {"messages": []}
+
+    logger = logging.getLogger(__name__)
 
     WAIT_UNTIL_LOADING_CONTENT_IN_MIN = 90 ## default; change with app.config: "rssIntervalMinutes"
     MESSAGES_FILE_NAME = "messages.json"
@@ -30,19 +33,17 @@ class ContentProvider:
         while True:
             try:
                 self.loadMessages()
-                print(f"wating for {self.WAIT_UNTIL_LOADING_CONTENT_IN_MIN} minutes ...")
+                self.logger.debug(f"wating for {self.WAIT_UNTIL_LOADING_CONTENT_IN_MIN} minutes ...")
                 sleep(60 * self.WAIT_UNTIL_LOADING_CONTENT_IN_MIN)
             except:
-                print("failed to load content this time")
+                self.logger.error("failed to load content this time")
 
 
     def loadMessages(self):
         newMsg = {"messages": []}
         NewsFeed = feedparser.parse(self.rssURL)
         entry = NewsFeed.entries[0]
-        ## print(entry) ## debug
-        # bibleText = "INFO: Dieser Dienst wird aus organisatorischen Gruenden einige Zeit nicht zur Verfuegung stehen.\nWeitere Infos: https://t.me/bibelbots" ##original:# self.formatMessage(entry["summary"])
-        # published = "2022-1-20 0:0:0" ###original:# self.getFormattedPublishedDate(str(entry["published_parsed"]))
+        self.logger.debug(f"RSS message: {entry}")
         bibleText = self.formatMessage(entry["summary"])
         published = self.getFormattedPublishedDate(str(entry["published_parsed"]))
         newMessage = {
@@ -66,9 +67,9 @@ class ContentProvider:
         try:
             messageFile = open(self.MESSAGES_FILE_NAME, 'w')
             messageFile.write(json.dumps(self.msg))
-            messageFile.close
+            messageFile.close()
         except:
-            print(f"error saving message file: {self.MESSAGES_FILE_NAME}")
+            self.logger.error(f"error saving message file: {self.MESSAGES_FILE_NAME}")
 
 
     def getFormattedPublishedDate(self, dateString):
@@ -77,7 +78,7 @@ class ContentProvider:
 
 
     def getPublishDate(self, dateString):
-        ## print(dateString) ## debug
+        self.logger.debug(f"publish dateString: {dateString}")
         year = list(map(int, re.findall("tm_year=(\d+)", dateString)))
         month = list(map(int, re.findall("tm_mon=(\d+),", dateString)))
         day = list(map(int, re.findall("tm_mday=(\d+)", dateString)))

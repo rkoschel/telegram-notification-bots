@@ -1,12 +1,13 @@
-from logging import INFO, NullHandler
 from threading import Thread
 import datetime as d
 import json, time
+import logging
 
 from config.constants import MSG_DATE_FORMAT
 
 class TelegramNotificationBot:
 
+    logger = logging.getLogger(__name__)
     MSG_SENDER_DELAY_SECONDS = 60 * 5 ## 5 minutes
     INFO_MESSAGE_FILE_NAME = "message.info"
     infoMessage = ""
@@ -21,9 +22,8 @@ class TelegramNotificationBot:
     ###
     # events
     def handleCallback(self, callback):
-        #print(f'callback: {callback}') ## debug
+        self.logger.debug(f'callback: {callback}')
         adminChatId = self.appConfig['adminChatId']
-        # INFO: .json doesn't work with python 3.7 on pi
         queryId = callback.json['id']
         data    = callback.json['data']
         requestersChatId = self.callbackHandler.getChatIdFromData(data)
@@ -36,10 +36,10 @@ class TelegramNotificationBot:
 
         if chatId != adminChatId:
             # should NEVER be True - but, just in case
-            print(f'NOT ALLOWED: {chatId} wanted to confirm a request from  {requestersName}')
+            self.logger.warning(f'NOT ALLOWED: {chatId} wanted to confirm a request from  {requestersName}')
             self.telegramBot.send_message(adminChatId, f'error 11\n{chatId}\n{requestersName}')
         else:
-            # print(f'callback: {queryId} = {answer}') ## debug
+            self.logger.debug(f'callback: {queryId} = {answer}')
             adminButtonConfirm = self.appConfig['adminButtonConfirm']
             adminButtonDecline = self.appConfig['adminButtonDecline']
             adminButtonYes = self.appConfig['adminButtonYes']
@@ -82,7 +82,7 @@ class TelegramNotificationBot:
     def onStop(self, msg):
         curChatId = msg.from_user.id
         if self.subManager.alreadyKnown(curChatId) and self.subManager.removeSubscriber(curChatId):
-            ## print(f"deleted {curChatId}") ## debug
+            self.logger.debug(f"deleted {curChatId}")
             self.telegramBot.send_message(curChatId, self.appConfig['stopMessage']);
 
 
@@ -117,9 +117,9 @@ class TelegramNotificationBot:
         try:
             infoMessageFile = open(self.INFO_MESSAGE_FILE_NAME, 'r')
             self.infoMessage = infoMessageFile.read()
-            infoMessageFile.close
+            infoMessageFile.close()
         except:
-            print("couldn't load message file")
+            self.logger.error("couldn't load message file")
             self.infoMessage = "Info"
 
     ### 
@@ -133,7 +133,7 @@ class TelegramNotificationBot:
                     self.telegramBot.send_message(chatId, msgContent, disable_web_page_preview=True)
                     self.subManager.updateLatestMessage(chatId, msgPublishDT)
                 except:
-                    print(f"sending message to {chatId} failed")
+                    self.logger.error(f"sending message to {chatId} failed")
                     ## TODO: count failures in the row -> extend chat.ids structure
                     ## if more then 7 days remove chatId
         self.subManager.saveChatIdsToFile()
@@ -152,12 +152,13 @@ class TelegramNotificationBot:
                     try:
                         sendMessageDT = d.datetime.strptime(todayDateStr + " " + chat["sendMessageTime"], MSG_DATE_FORMAT)
                     except:
-                        print("no sendMessageTime defined for " + str(curChatId))
+                        # this is actually not an error - just no send time defined
+                        self.logger.debug("no sendMessageTime defined for " + str(curChatId))
                     if sendMessageDT == None or nowDT > sendMessageDT:
                         self.sendNewMessages(curChatId, lastMessageDT)
             except:
-                print("error during sending new messages")
-            print("waiting for " + str(self.MSG_SENDER_DELAY_SECONDS/60) + " min. before checking to send new messages again")
+                self.logger.error("error during sending new messages")
+            self.logger.info("waiting for " + str(self.MSG_SENDER_DELAY_SECONDS/60) + " min. before checking to send new messages again")
             time.sleep(self.MSG_SENDER_DELAY_SECONDS)
 
     ###
@@ -171,14 +172,14 @@ class TelegramNotificationBot:
         
 
     def confirmRequest(self, requestersChatId, requestersName = '?'):
-        print(f'request {requestersChatId} confirmed')
+        self.logger.info(f'request {requestersChatId} confirmed')
         if self.subManager.addSubscriber(requestersChatId):
             self.telegramBot.send_message(requestersChatId, self.appConfig['startMessage']) 
             self.sendNewMessages(requestersChatId, None)
     
 
     def declineRequest(self, requestersChatId):
-        print(f'request {requestersChatId} declined')
+        self.logger.info(f'request {requestersChatId} declined')
         self.telegramBot.send_message(requestersChatId, self.appConfig['declineMessage']) 
 
 
