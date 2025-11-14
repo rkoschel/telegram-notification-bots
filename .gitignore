@@ -1,5 +1,5 @@
 .vscode
-app.config
+app.config*
 chat.ids
 chat.ids.rk
 requested.ids

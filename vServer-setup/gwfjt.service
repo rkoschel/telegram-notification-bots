@@ -1,0 +1,11 @@
+[Unit]
+Description=gwfjt bot
+After=multi-user.target
+
+[Service]
+Type=simple
+ExecStart=/root/apps/gwfjt/bin/run.sh
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
