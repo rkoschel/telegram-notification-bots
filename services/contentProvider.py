@@ -41,11 +41,13 @@ class ContentProvider:
         NewsFeed = feedparser.parse(self.rssURL)
         entry = NewsFeed.entries[0]
         ## print(entry) ## debug
-        messageText = self.formatMessage(entry["summary"])
+        # bibleText = "INFO: Dieser Dienst wird aus organisatorischen Gruenden einige Zeit nicht zur Verfuegung stehen.\nWeitere Infos: https://t.me/bibelbots" ##original:# self.formatMessage(entry["summary"])
+        # published = "2022-1-20 0:0:0" ###original:# self.getFormattedPublishedDate(str(entry["published_parsed"]))
+        bibleText = self.formatMessage(entry["summary"])
         published = self.getFormattedPublishedDate(str(entry["published_parsed"]))
         newMessage = {
             "date" : f"{published}",
-            "content" : f"{messageText}"
+            "content" : f"{bibleText}"
         }
         newMsg["messages"].append(newMessage)
         self.msg = newMsg
@@ -54,7 +56,9 @@ class ContentProvider:
 
     def formatMessage(self, message):
         formattedMessage = message
-        ## TODO: format message here
+        msgParts = message.split(" (<a ")
+        if len(msgParts) == 2:
+            formattedMessage = "<b>" + msgParts[0] + "</b> (<a " + msgParts[1]
         return formattedMessage
 
 
